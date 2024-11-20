@@ -4,13 +4,12 @@ services:
   mysql:
     build:
       context: ./infra/db
-    container_name: mysql_container
+    image: mysql
+    container_name: mysql
     volumes:
       - db_volume:/var/lib/mysql
     networks:
       - db_network
-    ports:
-      - "5655:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -20,7 +19,7 @@ services:
   app:
     build:
       context: ./app
-    container_name: app_container
+    container_name: app
     networks:
       - db_network
       - site_network
@@ -33,19 +32,23 @@ services:
       timeout: 5s
       retries: 3
     ports:
-      - "8000:8000"
+      - "4743:4743"
 
   nginx:
     build:
       context: ./infra/nginx
-    container_name: nginx_container
+    image: nginx
+    container_name: nginx
     networks:
       - site_network
-    ports:
-      - "5423:824"
     depends_on:
       app:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://app:4743/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   db_volume:
